@@ -5,9 +5,9 @@ import os
 
 # --- FUNCIONES DE GENERACIÓN ---
 def cuadrados_medios(semilla, cantidad):
-    """Generador por el método de cuadrados medios.
+    """Generador por el metodo de cuadrados medios.
     Args:
-        semilla (int): Número inicial para generar la secuencia
+        semilla (int): Numero inicial para generar la secuencia
         cantidad (int): Cantidad de números a generar
     Returns:
         list: Lista de strings con los resultados de cada paso
@@ -15,20 +15,20 @@ def cuadrados_medios(semilla, cantidad):
     resultados = []
     for _ in range(cantidad):
         cuadrado = semilla ** 2
-        cuadrado_str = str(cuadrado).zfill(8)  # Asegura 8 dígitos, rellena con ceros si es necesario
-        mitad = len(cuadrado_str) // 2
-        nuevo = int(cuadrado_str[mitad - 2: mitad + 2])  # Extrae los 4 dígitos centrales
+        cuadrado_str = str(cuadrado).zfill(8)  # asegura 8 digitos, rellena con ceros si es necesario
+        mitad = len(cuadrado_str) 
+        nuevo = int(cuadrado_str[mitad - 2: mitad + 2])  # Extrae los 4 digitos centrales
         decimal = nuevo / 10000  # Convierte a decimal entre 0 y 1
         resultados.append(f"{semilla}^2 = {cuadrado} -> {nuevo} -> {decimal:.4f}")
-        semilla = nuevo  # Actualiza la semilla para la siguiente iteración
+        semilla = nuevo  # Actualiza la semilla para la siguiente iteracion
     return resultados
 
 def productos_medios(x0, x1, cantidad):
-    """Generador por el método de productos medios.
+    """Generador por el metodo de productos medios.
     Args:
         x0 (int): Primera semilla
         x1 (int): Segunda semilla
-        cantidad (int): Cantidad de números a generar
+        cantidad (int): Cantidad de numeros a generar
     Returns:
         list: Lista de strings con los resultados de cada paso
     """
@@ -44,11 +44,11 @@ def productos_medios(x0, x1, cantidad):
     return resultados
 
 def multiplicador_constante(semilla, constante, cantidad):
-    """Generador por el método del multiplicador constante.
+    """Generador por el metodo del multiplicador constante.
     Args:
-        semilla (int): Número inicial para generar la secuencia
+        semilla (int): numero inicial para generar la secuencia
         constante (int): Constante multiplicativa
-        cantidad (int): Cantidad de números a generar
+        cantidad (int): Cantidad de numeros a generar
     Returns:
         list: Lista de strings con los resultados de cada paso
     """
@@ -63,23 +63,23 @@ def multiplicador_constante(semilla, constante, cantidad):
         semilla = nuevo  # Actualiza la semilla para la siguiente iteración
     return resultados
 
-# --- FUNCIÓN PRINCIPAL DE EJECUCIÓN ---
+# --- FUNCION PRINCIPAL DE EJECUCION ---
 import subprocess
 import sys
 
 def ejecutar():
-    """Obtiene los datos de la interfaz, ejecuta el método seleccionado y muestra los resultados."""
-    metodo = metodo_var.get()  # Obtiene el método seleccionado del combobox
+    """Obtiene los datos de la interfaz, ejecuta el metodo seleccionado y muestra los resultados."""
+    metodo = metodo_var.get()  # Obtiene el metodo seleccionado del combobox
     try:
-        cantidad = int(entry_cantidad.get())  # Obtiene la cantidad de números a generar
+        cantidad = int(entry_cantidad.get())  # obtiene la cantidad de numeros a generar
         resultados = []
         numeros_generados = []
         
-        # Ejecuta el método seleccionado con los parámetros correspondientes
+        # Ejecuta el metodo seleccionado con los parametros correspondientes
         if metodo == "Cuadrados Medios":
             semilla = int(entry_semilla.get())
             resultados = cuadrados_medios(semilla, cantidad)
-            # Extrae solo los números decimales generados para las pruebas
+            # Extrae solo los numeros decimales generados para las pruebas
             numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
         elif metodo == "Productos Medios":
             x0 = int(entry_semilla.get())
@@ -109,21 +109,21 @@ def ejecutar():
         btn_pruebas.grid(row=0, column=0, sticky="ew", ipady=5)
         
     except ValueError:
-        messagebox.showerror("Error", "Por favor ingresa valores numéricos válidos.")
+        messagebox.showerror("Error", "Por favor ingresa valores numericos válidos.")
 
 # --- ACTUALIZA LOS CAMPOS SEGÚN EL MÉTODO SELECCIONADO ---
 def actualizar_campos(*args):
-    """Muestra u oculta los campos según el método seleccionado."""
+    """Muestra u oculta los campos según el metodo seleccionado."""
     metodo = metodo_var.get()  # Obtiene el método seleccionado
     
-    # Oculta todos los campos extra inicialmente
+    # oculta todos los campos extra inicialmente
     label_extra.grid_remove()
     entry_extra.grid_remove()
     label_cantidad.grid_remove()
     entry_cantidad.grid_remove()
     btn.grid_remove()
 
-    # Configura los campos según el método seleccionado
+    # Configura los campos segun el metodo seleccionado
     if metodo == "Cuadrados Medios":
         label_semilla.config(text="Semilla:")
         label_cantidad.grid(row=3, column=0, sticky="e", pady=4)
@@ -146,9 +146,9 @@ def actualizar_campos(*args):
         entry_cantidad.grid(row=4, column=1, sticky="ew", pady=4)
         btn.grid(row=5, column=0, columnspan=2, pady=18, sticky="ew")
 
-# --- CONFIGURACIÓN DE LA INTERFAZ ---
+# --- CONFIGURACION DE LA INTERFAZ ---
 root = tk.Tk()
-root.title("Generador de Números Pseudoaleatorios")
+root.title("Generador de Numeros Pseudoaleatorios")
 root.geometry("900x800")
 root.minsize(600, 500)
 root.resizable(True, True)
