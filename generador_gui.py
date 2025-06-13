@@ -77,10 +77,14 @@ def ejecutar():
         
         # Ejecuta el metodo seleccionado con los parametros correspondientes
         if metodo == "Cuadrados Medios":
-            semilla = int(entry_semilla.get())
-            resultados = cuadrados_medios(semilla, cantidad)
-            # Extrae solo los numeros decimales generados para las pruebas
-            numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
+            if( (int(entry_semilla.get())) <10000 and (int(entry_semilla.get()) > 999)):
+                semilla = int(entry_semilla.get())
+                resultados = cuadrados_medios(semilla, cantidad)
+                # Extrae solo los numeros decimales generados para las pruebas
+                numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
+            else:
+                messagebox.showerror("Error", "La semilla debe de tener 4 digitos")
+            
         elif metodo == "Productos Medios":
             x0 = int(entry_semilla.get())
             x1 = int(entry_extra.get())
