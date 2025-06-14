@@ -13,12 +13,17 @@ def cuadrados_medios(semilla, cantidad):
     resultados = []
     for _ in range(cantidad):
         cuadrado = semilla ** 2
-        cuadrado_str = str(cuadrado).zfill(8)  # asegura 8 digitos, rellena con ceros si es necesario
-        mitad = len(cuadrado_str) 
+        cuadrado_str = str(cuadrado)
+        if len(cuadrado_str) % 2 != 0:
+            cuadrado_str = "0" + cuadrado_str
+        # cuadrado_str = cuadrado_str.zfill(8)
+        
+        mitad = len(cuadrado_str) //2
         nuevo = int(cuadrado_str[mitad - 2: mitad + 2])  # Extrae los 4 digitos centrales
         decimal = nuevo / 10000  # Convierte a decimal entre 0 y 1
+
         resultados.append(f"{semilla}^2 = {cuadrado} -> {nuevo} -> {decimal:.4f}")
-        semilla = nuevo  # Actualiza la semilla para la siguiente iteracion
+        semilla = nuevo  # Actualiza la semilla
     return resultados
 
 def productos_medios(x0, x1, cantidad):
