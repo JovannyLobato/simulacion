@@ -56,7 +56,7 @@ def multiplicador_constante(semilla, constante, cantidad):
     resultados = []
     for _ in range(cantidad):
         producto = semilla * constante
-        producto_str = str(producto).zfill(8)  # Asegura 8 dígitos
+        producto_str = str(producto)
         mitad = len(producto_str) // 2
         nuevo = int(producto_str[mitad - 2: mitad + 2])  # Extrae los 4 dígitos centrales
         decimal = nuevo / 10000
