@@ -3,12 +3,10 @@ from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 import os
 
-# --- FUNCIONES DE GENERACIÓN ---
+# --- FUNCIONES DE GENERACION ---
+
 def cuadrados_medios(semilla, cantidad):
     """Generador por el metodo de cuadrados medios.
-    Args:
-        semilla (int): Numero inicial para generar la secuencia
-        cantidad (int): Cantidad de números a generar
     Returns:
         list: Lista de strings con los resultados de cada paso
     """
@@ -25,22 +23,20 @@ def cuadrados_medios(semilla, cantidad):
 
 def productos_medios(x0, x1, cantidad):
     """Generador por el metodo de productos medios.
-    Args:
-        x0 (int): Primera semilla
-        x1 (int): Segunda semilla
-        cantidad (int): Cantidad de numeros a generar
+    x0 = semilla 1
+    x1 = semilla 2
     Returns:
         list: Lista de strings con los resultados de cada paso
     """
     resultados = []
     for _ in range(cantidad):
         producto = x0 * x1
-        producto_str = str(producto).zfill(8)  # Asegura 8 dígitos
+        producto_str = str(producto).zfill(8)  # asegura 8 digitos
         mitad = len(producto_str) // 2
-        nuevo = int(producto_str[mitad - 2: mitad + 2])  # Extrae los 4 dígitos centrales
+        nuevo = int(producto_str[mitad - 2: mitad + 2])  # Extrae los 4 digitos centrales
         decimal = nuevo / 10000
         resultados.append(f"{x0} * {x1} = {producto} -> {nuevo} -> {decimal:.4f}")
-        x0, x1 = x1, nuevo  # Actualiza las semillas para la siguiente iteración
+        x0, x1 = x1, nuevo  # Actualiza las semillas para la siguiente iteracion
     return resultados
 
 def multiplicador_constante(semilla, constante, cantidad):
@@ -84,17 +80,26 @@ def ejecutar():
                 numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
             else:
                 messagebox.showerror("Error", "La semilla debe de tener 4 digitos")
+                return
             
         elif metodo == "Productos Medios":
             x0 = int(entry_semilla.get())
             x1 = int(entry_extra.get())
-            resultados = productos_medios(x0, x1, cantidad)
-            numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
+            if(x0 < 10000 and x0 > 999 and x1 < 10000 and x1 > 999):       
+                resultados = productos_medios(x0, x1, cantidad)
+                numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
+            else:
+                messagebox.showerror("Error", "Ambas semillas deben de tener 4 dígitos")
+                return
         elif metodo == "Multiplicador Constante":
             semilla = int(entry_semilla.get())
             constante = int(entry_extra.get())
-            resultados = multiplicador_constante(semilla, constante, cantidad)
-            numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
+            if(semilla < 10000 and semilla > 999 and constante < 10000 and constante > 999):
+                resultados = multiplicador_constante(semilla, constante, cantidad)
+                numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
+            else:
+                messagebox.showerror("Error", "Ambas, semilla y constante deben de tener 4 dígitos")
+                return
         else:
             resultados = ["Selecciona un método válido."]
         
@@ -107,7 +112,8 @@ def ejecutar():
         btn_pruebas = ttk.Button(
             btn_pruebas_frame,
             text="Realizar Pruebas con estos Datos",
-            command=lambda: subprocess.Popen([sys.executable, "pruebas_ri.py", ",".join(map(str, numeros_generados))]),
+            command=lambda: subprocess.Popen([sys.executable, "pruebas_ri.py", 
+            ",".join(map(str, numeros_generados))]),
             style="TButton"
         )
         btn_pruebas.grid(row=0, column=0, sticky="ew", ipady=5)
@@ -115,7 +121,7 @@ def ejecutar():
     except ValueError:
         messagebox.showerror("Error", "Por favor ingresa valores numericos válidos.")
 
-# --- ACTUALIZA LOS CAMPOS SEGÚN EL MÉTODO SELECCIONADO ---
+# --- ACTUALIZA LOS CAMPOS SEGUN EL METODO SELECCIONADO ---
 def actualizar_campos(*args):
     """Muestra u oculta los campos según el metodo seleccionado."""
     metodo = metodo_var.get()  # Obtiene el método seleccionado
@@ -123,8 +129,8 @@ def actualizar_campos(*args):
     # oculta todos los campos extra inicialmente
     label_extra.grid_remove()
     entry_extra.grid_remove()
-    label_cantidad.grid_remove()
-    entry_cantidad.grid_remove()
+    # label_cantidad.grid_remove()
+    # entry_cantidad.grid_remove()
     btn.grid_remove()
 
     # Configura los campos segun el metodo seleccionado
@@ -271,6 +277,8 @@ entry_extra = ttk.Entry(input_frame, font=("Segoe UI", 11))
 # Campo para la cantidad
 label_cantidad = ttk.Label(input_frame, text="Cantidad:", font=("Segoe UI", 11))
 entry_cantidad = ttk.Entry(input_frame, font=("Segoe UI", 11))
+label_cantidad.grid(row=4, column=0, sticky="e", pady=4)
+entry_cantidad.grid(row=4, column=1, sticky="ew", pady=4)
 
 # Botón para ejecutar
 btn_frame = ttk.Frame(main_frame, style="TFrame")
@@ -288,7 +296,7 @@ btn.grid(row=0, column=0, sticky="ew", ipady=10)
 # Área de resultados
 result_frame = ttk.LabelFrame(main_frame, text="Resultados", padding="15 10", style="TFrame")
 result_frame.grid(row=4, column=0, sticky="nsew", pady=(15, 0))
-result_frame.grid_rowconfigure(1, weight=1)  # La fila del textbox se expandirá
+result_frame.grid_rowconfigure(1, weight=1)  # La fila del textbox se expandir
 result_frame.grid_columnconfigure(0, weight=1)
 
 # Frame para el botón de pruebas
@@ -318,5 +326,5 @@ text_resultado.configure(yscrollcommand=text_scrollbar.set)
 # Centrar la ventana
 root.eval('tk::PlaceWindow . center')
 
-# Iniciar la aplicación
+# Iniciar la aplicacion
 root.mainloop()
