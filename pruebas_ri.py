@@ -39,7 +39,7 @@ class PruebasAleatoriedadApp:
         self.canvas_frame = self.canvas.create_window((0, 0), window=self.main_frame, anchor="nw")
         
         # Configurar el grid principal
-        self.main_frame.grid_rowconfigure(4, weight=1)  # La fila de resultados se expandirá
+        self.main_frame.grid_rowconfigure(4, weight=1)
         self.main_frame.grid_columnconfigure(0, weight=1)
         
         # Configurar el evento de redimensionamiento
@@ -139,19 +139,13 @@ class PruebasAleatoriedadApp:
         ttk.Radiobutton(config_frame, text="99%", variable=self.nivel_confianza, value="99").grid(row=0, column=3, sticky="w", padx=15)
         
         # Número de intervalos
+        """
         ttk.Label(config_frame, text="Número de intervalos (uniformidad):", font=("Segoe UI", 11)).grid(row=1, column=0, sticky="w", pady=10)
         self.entry_intervalos = ttk.Entry(config_frame, width=20, font=("Segoe UI", 11))
         self.entry_intervalos.grid(row=1, column=1, sticky="w", pady=10, padx=5)
         self.entry_intervalos.insert(0, "10")
+        """
         
-        # Límites manuales
-        ttk.Label(config_frame, text="Límite inferior (opcional):", font=("Segoe UI", 11)).grid(row=2, column=0, sticky="w", pady=10)
-        self.entry_li = ttk.Entry(config_frame, width=20, font=("Segoe UI", 11))
-        self.entry_li.grid(row=2, column=1, sticky="w", pady=10, padx=5)
-        
-        ttk.Label(config_frame, text="Límite superior (opcional):", font=("Segoe UI", 11)).grid(row=2, column=2, sticky="w", pady=10)
-        self.entry_ls = ttk.Entry(config_frame, width=20, font=("Segoe UI", 11))
-        self.entry_ls.grid(row=2, column=3, sticky="w", pady=10, padx=5)
 
     def create_buttons_section(self):
         """Crea los botones para realizar las diferentes pruebas."""
@@ -159,8 +153,6 @@ class PruebasAleatoriedadApp:
         buttons_frame.grid(row=3, column=0, sticky="ew", pady=15)
         buttons_frame.grid_columnconfigure(3, weight=1)
         
-        ttk.Button(buttons_frame, text="Calcular Estadísticas", 
-                  command=self.calcular_estadisticas, style="TButton").grid(row=0, column=0, padx=5, sticky="ew")
         ttk.Button(buttons_frame, text="Prueba de Medias", 
                   command=self.calcular_prueba_medias, style="TButton").grid(row=0, column=1, padx=5, sticky="ew")
         ttk.Button(buttons_frame, text="Prueba de Varianza", 
@@ -253,18 +245,6 @@ class PruebasAleatoriedadApp:
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True)
 
-    def calcular_estadisticas(self):
-        """Calcula y muestra estadísticas básicas de los datos."""
-        try:
-            datos = self.obtener_datos()
-            media = statistics.mean(datos)
-            varianza = statistics.variance(datos)
-            resultado = f"Media: {media:.4f}\nVarianza: {varianza:.4f}"
-            self.mostrar_resultado(resultado)
-            self.mostrar_grafico(datos, "Distribución de Datos")
-        except ValueError as e:
-            messagebox.showerror("Error", f"Datos inválidos: {e}")
-
     def calcular_prueba_medias(self):
         """Realiza la prueba de medias para verificar si la media está dentro del rango esperado."""
         try:
@@ -274,17 +254,11 @@ class PruebasAleatoriedadApp:
             n = len(datos)
             media = statistics.mean(datos)
             
-            li_manual = self.entry_li.get()
-            ls_manual = self.entry_ls.get()
-            if li_manual and ls_manual:
-                li = float(li_manual)
-                ls = float(ls_manual)
-                fuente_limites = "especificados manualmente"
-            else:
-                z = norm.ppf(1 - alpha / 2)
-                li = 0.5 - z * (1 / (math.sqrt(12 * n)))
-                ls = 0.5 + z * (1 / (math.sqrt(12 * n)))
-                fuente_limites = "calculados automáticamente"
+            z = norm.ppf(1 - alpha / 2)
+            li = 0.5 - z * (1 / (math.sqrt(12 * n)))
+            ls = 0.5 + z * (1 / (math.sqrt(12 * n)))
+            fuente_limites = "calculados automáticamente"
+
             
             resultado = (f"Prueba de Medias (Nivel de confianza: {confianza}%)\n"
                         f"Media observada: {media:.6f}\n"
@@ -330,7 +304,7 @@ class PruebasAleatoriedadApp:
             datos = self.obtener_datos()
             confianza = float(self.nivel_confianza.get())
             alpha = (100 - confianza) / 100
-            k = int(self.entry_intervalos.get()) if self.entry_intervalos.get() else 10
+            k = int(round(1 + 3.322 * math.log10(len(datos)))) # aca lo calculo por sturgles
             n = len(datos)
             esperado = n / k
             
