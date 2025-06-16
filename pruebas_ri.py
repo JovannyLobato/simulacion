@@ -298,8 +298,8 @@ class PruebasAleatoriedadApp:
         except ValueError as e:
             messagebox.showerror("Error", f"Datos inválidos: {e}")
 
+    """
     def calcular_uniformidad(self):
-        """Realiza la prueba chi-cuadrada para verificar uniformidad de los datos."""
         try:
             datos = self.obtener_datos()
             confianza = float(self.nivel_confianza.get())
@@ -354,6 +354,86 @@ class PruebasAleatoriedadApp:
             
         except ValueError as e:
             messagebox.showerror("Error", f"Datos inválidos: {e}")
+    """
+
+    def calcular_uniformidad(self):
+        """Realiza la prueba chi-cuadrada para verificar uniformidad de los datos."""
+        try:
+            datos = self.obtener_datos()
+            confianza = float(self.nivel_confianza.get())
+            n = len(datos)
+
+            niveles_criticos = {90: 0.95, 95: 0.975, 99: 0.995}
+            nivel_critico = niveles_criticos.get(int(confianza), 0.975)
+
+            m = math.sqrt(n)       
+            k = math.ceil(m)         
+            esperado = n / m          
+
+            frec_obs = [0] * k
+            for d in datos:
+                idx = min(int(d * k), k - 1) 
+                frec_obs[idx] += 1
+
+            frec_esp = [esperado] * k
+
+            factor = n / sum(frec_esp)
+            frec_esp = [e * factor for e in frec_esp]
+
+
+            
+
+
+            # Prueba chi-cuadrada
+            chi2_tabla = chi2.ppf(nivel_critico, k - 1)
+
+            
+            resultado = ""
+
+
+            
+            resultado += (
+                f"Prueba de Uniformidad (Nivel de confianza: {confianza}%)\n"
+                f"Chi-Cuadrada teórica: {chi2_tabla:.10f}\n"
+            )
+            # Mostrar tabla de frecuencias
+            resultado += f"{'Intervalo':<15} {'Observado':<12} {'Esperado':<12} {'(E-O)^2/E':<15}\n"
+            resultado += "-" * 60 + "\n"
+            chical = 0
+            for i in range(k):
+                inf = i / k
+                sup = (i + 1) / k
+                O = frec_obs[i]
+                E = esperado
+                contribucion = ((E - O) ** 2) / E
+                chical = chical + contribucion
+                resultado += f"[{inf:.2f}-{sup:.2f}){' ':<5} {O:<12} {E:<12.8f} {contribucion:<15.10f}\n"
+            resultado += "chi cuadrada calculada: " +  f"{chical:<12.8}\n"
+            
+            resultado += f"Conclusión: {'Pasa la prueba' if chical <= chi2_tabla else 'No pasa la prueba'}\n\n"
+
+            self.mostrar_resultado(resultado)
+
+            # Gráfico de barras
+            fig, ax = plt.subplots(figsize=(10, 4))
+            ax.bar(range(k), frec_obs, alpha=0.7, label='Observado', color='#4361ee')
+            ax.axhline(y=esperado, color='#dc3545', linestyle='--', label='Esperado', linewidth=2)
+            ax.set_title("Distribución de Frecuencias", fontsize=12, pad=15)
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+            ax.set_facecolor('#f8f9fa')
+            fig.patch.set_facecolor('#f0f2f5')
+
+            canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill="both", expand=True)
+
+        except ValueError as e:
+            messagebox.showerror("Error", f"Datos inválidos: {e}")
+
+
+
+
 
     def obtener_datos(self):
         """Obtiene y valida los datos ingresados por el usuario.
