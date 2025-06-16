@@ -100,13 +100,9 @@ class PruebasAleatoriedadApp(ctk.CTk):
         ctk.CTkLabel(btns_frame, text="Pruebas Estadísticas",
                      font=("Segoe UI Semibold", 28), text_color=PRIMARY_DARK).pack(pady=(20, 10))
 
-        # Botones para realizar pruebas
+        # Botones para realizar pruebas (sin el de estadísticas)
         btns_row = ctk.CTkFrame(btns_frame, fg_color=WHITE)
         btns_row.pack(pady=20, padx=40, fill="x")
-        ctk.CTkButton(btns_row, text="Calcular Estadísticas",
-                      font=("Segoe UI Semibold", 18), height=50, corner_radius=10,
-                      fg_color=PRIMARY, hover_color=PRIMARY_DARK,
-                      command=self.calcular_estadisticas).pack(side="left", padx=10, pady=10, fill="x", expand=True)
         ctk.CTkButton(btns_row, text="Prueba de Medias",
                       font=("Segoe UI Semibold", 18), height=50, corner_radius=10,
                       fg_color=PRIMARY, hover_color=PRIMARY_DARK,
@@ -126,16 +122,16 @@ class PruebasAleatoriedadApp(ctk.CTk):
         ctk.CTkLabel(resultados_frame, text="Resultados y Gráficos",
                      font=("Segoe UI Semibold", 28), text_color=PRIMARY_DARK).pack(pady=(20, 10))
 
-        # Área para gráficos
-        self.graph_frame = ctk.CTkFrame(resultados_frame, fg_color=BACKGROUND, corner_radius=12)
-        self.graph_frame.pack(padx=20, pady=20, fill="x")
-
         # Área de texto para resultados
         self.text_resultado = ctk.CTkTextbox(
             resultados_frame, font=("Consolas", 16), fg_color=BACKGROUND,
             height=250, corner_radius=10, text_color=TEXT
         )
         self.text_resultado.pack(padx=20, pady=20, fill="both", expand=True)
+
+        # Área para gráficos (ahora va debajo del textbox)
+        self.graph_frame = ctk.CTkFrame(resultados_frame, fg_color=BACKGROUND, corner_radius=12)
+        self.graph_frame.pack(padx=20, pady=(0, 20), fill="x")
 
         if datos:
             self.cargar_datos(datos)
@@ -168,6 +164,7 @@ class PruebasAleatoriedadApp(ctk.CTk):
             messagebox.showerror("Error", f"No se pudo abrir el generador: {e}")
 
     def mostrar_grafico(self, datos, titulo, tipo="linea"):
+        # Muestra el gráfico debajo del textbox de resultados
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
         fig, ax = plt.subplots(figsize=(10, 4))
@@ -175,6 +172,9 @@ class PruebasAleatoriedadApp(ctk.CTk):
             ax.plot(datos, 'b-', alpha=0.7, linewidth=2)
         elif tipo == "histograma":
             ax.hist(datos, bins=min(20, len(datos)), alpha=0.7, color=PRIMARY)
+        elif tipo == "barras":
+            x = np.arange(len(datos))
+            ax.bar(x, datos, width=0.35, alpha=0.7, color=PRIMARY)
         ax.set_title(titulo, fontsize=16, pad=15, color=PRIMARY_DARK)
         ax.grid(True, alpha=0.3)
         canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
@@ -235,7 +235,7 @@ class PruebasAleatoriedadApp(ctk.CTk):
             f"Conclusión: {'Pasa la prueba' if pasa_prueba else 'No pasa la prueba'}"
         )
         self.mostrar_resultado(resultado)
-        self.mostrar_grafico(datos, "Prueba de Medias")
+        self.mostrar_grafico(datos, "Prueba de Medias", tipo="linea")
 
     def calcular_varianza(self):
         valido, resultado = self.validar_datos()
@@ -265,7 +265,7 @@ class PruebasAleatoriedadApp(ctk.CTk):
             f"Conclusión: {'Pasa la prueba' if pasa_prueba else 'No pasa la prueba'}"
         )
         self.mostrar_resultado(resultado)
-        self.mostrar_grafico(datos, "Prueba de Varianza")
+        self.mostrar_grafico(datos, "Prueba de Varianza", tipo="histograma")
 
     def calcular_uniformidad(self):
         valido, resultado = self.validar_datos()
@@ -303,16 +303,8 @@ class PruebasAleatoriedadApp(ctk.CTk):
             resultado += f"[{inf:.1f}-{sup:.1f}){' ':<5} {frec_obs[i]:<12} {esperado:.1f}\n"
         
         self.mostrar_resultado(resultado)
-        
-        fig, ax = plt.subplots(figsize=(10, 4))
-        x = np.arange(k)
-        ax.bar(x, frec_obs, width=0.35, alpha=0.7, label='Observado', color=PRIMARY)
-        ax.axhline(y=esperado, color=ACCENT, linestyle='--', label='Esperado', linewidth=2)
-        ax.set_title("Distribución de Frecuencias", fontsize=16, pad=15, color=PRIMARY_DARK)
-        ax.legend()
-        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
-        canvas.draw()
-        canvas.get_tk_widget().pack(fill="both", expand=True)
+        # Gráfico de barras debajo del textbox
+        self.mostrar_grafico(frec_obs, "Distribución de Frecuencias", tipo="barras")
 
 if __name__ == "__main__":
     datos = None
