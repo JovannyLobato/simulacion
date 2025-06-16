@@ -280,7 +280,7 @@ class PruebasAleatoriedadApp:
             media = statistics.mean(datos)
             
             suma = sum((x - media) ** 2 for x in datos)
-            varianza = suma
+            varianza = suma / (n-1)
             
             chi2_li = chi2.ppf(alpha / 2, df=n - 1)
             chi2_ls = chi2.ppf(1 - alpha / 2, df=n - 1)
