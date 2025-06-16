@@ -1,10 +1,62 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
-from PIL import Image, ImageTk
-import os
+# Importamos las librerías necesarias para la interfaz gráfica y cálculos
+import customtkinter as ctk  # Para una interfaz moderna
+from ttkthemes import ThemedTk  # Para temas visuales
+import tkinter as tk  # Librería base para interfaces
+from tkinter import ttk, messagebox  # Componentes adicionales de tkinter
+from PIL import Image, ImageTk  # Para manejar imágenes
+import os  # Para operaciones con el sistema operativo
+import re  # Para expresiones regulares
+import subprocess  # Para ejecutar otros programas
+import sys  # Para interactuar con el sistema
 
-# --- FUNCIONES DE GENERACION ---
+# Definimos colores modernos para la interfaz
+PRIMARY = "#4361ee"  # Color principal (azul)
+PRIMARY_DARK = "#3a56d4"  # Azul oscuro
+BACKGROUND = "#f0f2f5"  # Fondo gris claro
+WHITE = "#ffffff"  # Blanco
+TEXT = "#22223b"  # Texto oscuro
+ACCENT = "#ffd60a"  # Color de acento (amarillo)
 
+# Configuramos el modo visual de la aplicación
+ctk.set_appearance_mode("light")  # Tema claro
+ctk.set_default_color_theme("blue")  # Tema azul
+
+# --- FUNCIONES DE GENERACIÓN ---
+
+# Función para validar que los datos ingresados sean correctos
+def validar_entrada(valor, tipo="entero", campo="semilla"):
+    """Valida que la entrada sea un número válido y esté dentro del rango correcto."""
+    if not valor.strip():  # Si está vacío
+        return False, "El campo no puede estar vacío"
+    
+    try:
+        if tipo == "entero":  # Validar números enteros
+            num = int(valor)
+            if num <= 0:  # Debe ser positivo
+                return False, "El número debe ser positivo"
+            if campo == "semilla":  # Semilla debe tener 4 dígitos
+                if num < 1000 or num > 9999:
+                    return False, "La semilla debe ser un número de 4 dígitos (1000-9999)"
+            return True, num  # Retorna el número si es válido
+        else:  # Validar números decimales
+            num = float(valor)
+            if num <= 0 or num >= 1:  # Debe estar entre 0 y 1
+                return False, "El número debe estar entre 0 y 1"
+            return True, num
+    except ValueError:  # Si no es un número
+        return False, "Debe ingresar un número válido"
+
+# Función para obtener los 4 dígitos centrales de un número
+def obtener_digitos_centrales(numero):
+    """Extrae los 4 dígitos del centro de un número."""
+    num_str = str(numero)  # Convierte el número a texto
+    if len(num_str) % 2 != 0:  # Si es impar, añade un cero al inicio
+        num_str = "0" + num_str
+    mitad = len(num_str) // 2  # Calcula la mitad
+    centrales = num_str[mitad - 2: mitad + 2]  # Extrae los 4 dígitos centrales
+    return int(centrales)  # Devuelve los dígitos como número
+
+# Generador de números pseudoaleatorios usando el método de Cuadrados Medios
 def cuadrados_medios(semilla, cantidad):
     """Generador por el metodo de cuadrados medios.
     Returns:
@@ -16,7 +68,6 @@ def cuadrados_medios(semilla, cantidad):
         cuadrado_str = str(cuadrado)
         if len(cuadrado_str) % 2 != 0:
             cuadrado_str = "0" + cuadrado_str
-        # cuadrado_str = cuadrado_str.zfill(8)
         
         mitad = len(cuadrado_str) //2
         nuevo = int(cuadrado_str[mitad - 2: mitad + 2])  # Extrae los 4 digitos centrales
@@ -26,6 +77,7 @@ def cuadrados_medios(semilla, cantidad):
         semilla = nuevo  # Actualiza la semilla
     return resultados
 
+# Similar a cuadrados_medios, pero multiplica dos semillas en lugar de elevar al cuadrado
 def productos_medios(x0, x1, cantidad):
     """Generador por el metodo de productos medios.
     x0 = semilla 1
@@ -44,6 +96,7 @@ def productos_medios(x0, x1, cantidad):
         x0, x1 = x1, nuevo  # Actualiza las semillas para la siguiente iteracion
     return resultados
 
+# Generador que multiplica la semilla por una constante fija
 def multiplicador_constante(semilla, constante, cantidad):
     """Generador por el metodo del multiplicador constante.
     Args:
@@ -64,272 +117,224 @@ def multiplicador_constante(semilla, constante, cantidad):
         semilla = nuevo  # Actualiza la semilla para la siguiente iteración
     return resultados
 
-# --- FUNCION PRINCIPAL DE EJECUCION ---
-import subprocess
-import sys
+# --- INTERFAZ GRÁFICA ---
+class GeneradorApp(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.title("Generador de Números Pseudoaleatorios")
+        self.geometry("1000x800")
+        self.minsize(800, 600)
+        self.configure(fg_color=BACKGROUND)
 
-def ejecutar():
-    """Obtiene los datos de la interfaz, ejecuta el metodo seleccionado y muestra los resultados."""
-    metodo = metodo_var.get()  # Obtiene el metodo seleccionado del combobox
-    try:
-        cantidad = int(entry_cantidad.get())  # obtiene la cantidad de numeros a generar
-        resultados = []
-        numeros_generados = []
-        
-        # Ejecuta el metodo seleccionado con los parametros correspondientes
-        if metodo == "Cuadrados Medios":
-            if( (int(entry_semilla.get())) <10000 and (int(entry_semilla.get()) > 999)):
-                semilla = int(entry_semilla.get())
-                resultados = cuadrados_medios(semilla, cantidad)
-                # Extrae solo los numeros decimales generados para las pruebas
-                numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
-            else:
-                messagebox.showerror("Error", "La semilla debe de tener 4 digitos")
-                return
-            
-        elif metodo == "Productos Medios":
-            x0 = int(entry_semilla.get())
-            x1 = int(entry_extra.get())
-            if(x0 < 10000 and x0 > 999 and x1 < 10000 and x1 > 999):       
-                resultados = productos_medios(x0, x1, cantidad)
-                numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
-            else:
-                messagebox.showerror("Error", "Ambas semillas deben de tener 4 dígitos")
-                return
-        elif metodo == "Multiplicador Constante":
-            semilla = int(entry_semilla.get())
-            constante = int(entry_extra.get())
-            if(semilla < 10000 and semilla > 999 and constante < 10000 and constante > 999):
-                resultados = multiplicador_constante(semilla, constante, cantidad)
-                numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
-            else:
-                messagebox.showerror("Error", "Ambas, semilla y constante deben de tener 4 dígitos")
-                return
-        else:
-            resultados = ["Selecciona un método válido."]
-        
-        # Limpia y muestra los resultados en el textbox
-        text_resultado.delete(1.0, tk.END)
-        for r in resultados:
-            text_resultado.insert(tk.END, r + "\n")
-            
-        # Crea botón para abrir pruebas con los datos generados
-        btn_pruebas = ttk.Button(
-            btn_pruebas_frame,
-            text="Realizar Pruebas con estos Datos",
-            command=lambda: subprocess.Popen([sys.executable, "pruebas_ri.py", 
-            ",".join(map(str, numeros_generados))]),
-            style="TButton"
+        # Frame principal con scroll
+        self.scrollable_frame = ctk.CTkScrollableFrame(self, fg_color=BACKGROUND, corner_radius=0)
+        self.scrollable_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        frame = self.scrollable_frame
+
+        # Configuración del tema
+        try:
+            from ttkthemes import ThemedStyle
+            themed = ThemedStyle(self)
+            themed.set_theme("arc")
+        except Exception:
+            pass
+
+        # --- HEADER ---
+        header = ctk.CTkFrame(frame, fg_color=WHITE, corner_radius=20)
+        header.pack(pady=20, padx=40, fill="x")
+        ctk.CTkLabel(header, text="Generador de Números Pseudoaleatorios",
+                     font=("Segoe UI Semibold", 36), text_color=PRIMARY_DARK).pack(pady=(20, 10))
+        ctk.CTkLabel(header, text="Seleccione un método y configure los parámetros",
+                     font=("Segoe UI", 20), text_color=TEXT).pack(pady=(0, 20))
+
+        # --- CONFIGURACIÓN DEL MÉTODO ---
+        config_frame = ctk.CTkFrame(frame, fg_color=WHITE, corner_radius=20)
+        config_frame.pack(pady=20, padx=40, fill="x")
+        ctk.CTkLabel(config_frame, text="Selección del Método",
+                     font=("Segoe UI Semibold", 28), text_color=PRIMARY_DARK).pack(pady=(20, 10))
+
+        # Dropdown para seleccionar el método
+        self.metodo_var = ctk.StringVar(value="Cuadrados Medios")
+        self.combo = ctk.CTkComboBox(
+            config_frame,
+            variable=self.metodo_var,
+            values=["Cuadrados Medios", "Productos Medios", "Multiplicador Constante"],
+            font=("Segoe UI", 18),
+            width=400,
+            height=45,
+            corner_radius=10,
+            fg_color=WHITE,
+            text_color=TEXT,
+            dropdown_fg_color=WHITE
         )
-        btn_pruebas.grid(row=0, column=0, sticky="ew", ipady=5)
-        
-    except ValueError:
-        messagebox.showerror("Error", "Por favor ingresa valores numericos válidos.")
+        self.combo.pack(pady=20)
+        self.combo.bind("<<ComboboxSelected>>", self.actualizar_campos)
 
-# --- ACTUALIZA LOS CAMPOS SEGUN EL METODO SELECCIONADO ---
-def actualizar_campos(*args):
-    """Muestra u oculta los campos según el metodo seleccionado."""
-    metodo = metodo_var.get()  # Obtiene el método seleccionado
-    
-    # oculta todos los campos extra inicialmente
-    label_extra.grid_remove()
-    entry_extra.grid_remove()
-    # label_cantidad.grid_remove()
-    # entry_cantidad.grid_remove()
-    btn.grid_remove()
+        # --- PARÁMETROS DE ENTRADA ---
+        entrada_frame = ctk.CTkFrame(frame, fg_color=WHITE, corner_radius=20)
+        entrada_frame.pack(pady=20, padx=40, fill="x")
+        ctk.CTkLabel(entrada_frame, text="Parámetros",
+                     font=("Segoe UI Semibold", 28), text_color=PRIMARY_DARK).pack(pady=(20, 10))
 
-    # Configura los campos segun el metodo seleccionado
-    if metodo == "Cuadrados Medios":
-        label_semilla.config(text="Semilla:")
-        label_cantidad.grid(row=3, column=0, sticky="e", pady=4)
-        entry_cantidad.grid(row=3, column=1, sticky="ew", pady=4)
-        btn.grid(row=4, column=0, columnspan=2, pady=18, sticky="ew")
-    elif metodo == "Productos Medios":
-        label_semilla.config(text="Semilla 1:")
-        label_extra.config(text="Semilla 2:")
-        label_extra.grid(row=3, column=0, sticky="e", pady=4)
-        entry_extra.grid(row=3, column=1, sticky="ew", pady=4)
-        label_cantidad.grid(row=4, column=0, sticky="e", pady=4)
-        entry_cantidad.grid(row=4, column=1, sticky="ew", pady=4)
-        btn.grid(row=5, column=0, columnspan=2, pady=18, sticky="ew")
-    elif metodo == "Multiplicador Constante":
-        label_semilla.config(text="Semilla:")
-        label_extra.config(text="Constante:")
-        label_extra.grid(row=3, column=0, sticky="e", pady=4)
-        entry_extra.grid(row=3, column=1, sticky="ew", pady=4)
-        label_cantidad.grid(row=4, column=0, sticky="e", pady=4)
-        entry_cantidad.grid(row=4, column=1, sticky="ew", pady=4)
-        btn.grid(row=5, column=0, columnspan=2, pady=18, sticky="ew")
+        # Frame para los campos
+        campos_frame = ctk.CTkFrame(entrada_frame, fg_color=WHITE)
+        campos_frame.pack(pady=20, padx=40)
 
-# --- CONFIGURACION DE LA INTERFAZ ---
-root = tk.Tk()
-root.title("Generador de Numeros Pseudoaleatorios")
-root.geometry("900x800")
-root.minsize(600, 500)
-root.resizable(True, True)
-root.configure(bg="#f0f2f5")
+        # Campos para semilla, extra y cantidad
+        self.label_semilla = ctk.CTkLabel(campos_frame, text="Semilla:",
+                                          font=("Segoe UI", 18), text_color=TEXT)
+        self.label_semilla.grid(row=0, column=0, padx=20, pady=12, sticky="e")
+        self.entry_semilla = ctk.CTkEntry(campos_frame, font=("Segoe UI", 18),
+                                          width=350, height=45, corner_radius=10)
+        self.entry_semilla.grid(row=0, column=1, padx=20, pady=12, sticky="w")
 
-# Configurar el grid principal
-root.grid_rowconfigure(0, weight=1)
-root.grid_columnconfigure(0, weight=1)
+        self.label_extra = ctk.CTkLabel(campos_frame, text="Extra:",
+                                        font=("Segoe UI", 18), text_color=TEXT)
+        self.label_extra.grid(row=1, column=0, padx=20, pady=12, sticky="e")
+        self.entry_extra = ctk.CTkEntry(campos_frame, font=("Segoe UI", 18),
+                                        width=350, height=45, corner_radius=10)
+        self.entry_extra.grid(row=1, column=1, padx=20, pady=12, sticky="w")
 
-# Frame principal
-main_frame = ttk.Frame(root, style="TFrame")
-main_frame.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
-main_frame.grid_rowconfigure(4, weight=1)  # La fila de resultados se expandirá
-main_frame.grid_columnconfigure(0, weight=1)
+        self.label_cantidad = ctk.CTkLabel(campos_frame, text="Cantidad:",
+                                           font=("Segoe UI", 18), text_color=TEXT)
+        self.label_cantidad.grid(row=2, column=0, padx=20, pady=12, sticky="e")
+        self.entry_cantidad = ctk.CTkEntry(campos_frame, font=("Segoe UI", 18),
+                                           width=350, height=45, corner_radius=10)
+        self.entry_cantidad.grid(row=2, column=1, padx=20, pady=12, sticky="w")
 
-# Establecer estilo moderno
-style = ttk.Style()
-style.theme_use("clam")
+        # --- BOTÓN PRINCIPAL ---
+        self.btn_generar = ctk.CTkButton(
+            frame,
+            text="Generar Números",
+            font=("Segoe UI Semibold", 22),
+            fg_color=PRIMARY,
+            hover_color=PRIMARY_DARK,
+            height=50,
+            corner_radius=15,
+            command=self.ejecutar
+        )
+        self.btn_generar.pack(pady=30, padx=100, fill="x")
 
-# Configurar colores y estilos para los widgets
-style.configure("TFrame", background="#f0f2f5")
-style.configure("TLabel", background="#f0f2f5", font=("Segoe UI", 11))
-style.configure("TButton", 
-                font=("Segoe UI", 11, "bold"), 
-                padding=10,
-                background="#4361ee",
-                foreground="white",
-                borderwidth=0,
-                focusthickness=3,
-                focuscolor="#4361ee")
-style.map("TButton",
-          background=[("active", "#3a56d4"), ("pressed", "#2d44b3")],
-          relief=[("pressed", "flat"), ("!pressed", "flat")])
-style.configure("TCombobox", 
-                font=("Segoe UI", 11),
-                padding=8,
-                selectbackground="#4361ee",
-                fieldbackground="white",
-                borderwidth=1,
-                relief="solid")
-style.configure("TEntry", 
-                font=("Segoe UI", 11),
-                padding=8,
-                fieldbackground="white",
-                borderwidth=1,
-                relief="solid")
-style.configure("TLabelframe", 
-                background="#f0f2f5",
-                font=("Segoe UI", 11, "bold"),
-                borderwidth=2,
-                relief="solid")
-style.configure("TLabelframe.Label", 
-                background="#f0f2f5",
-                font=("Segoe UI", 11, "bold"),
-                foreground="#2b2d42")
+        # --- RESULTADOS ---
+        resultados_frame = ctk.CTkFrame(frame, fg_color=WHITE, corner_radius=20)
+        resultados_frame.pack(pady=20, padx=40, fill="both", expand=True)
+        ctk.CTkLabel(resultados_frame, text="Resultados",
+                     font=("Segoe UI Semibold", 28), text_color=PRIMARY_DARK).pack(pady=(20, 10))
 
-# Encabezado con título y subtítulo
-header_frame = ttk.Frame(main_frame, style="TFrame")
-header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 15))
-header_frame.grid_columnconfigure(0, weight=1)
+        # Área de texto para mostrar resultados
+        self.text_resultado = ctk.CTkTextbox(
+            resultados_frame,
+            font=("Consolas", 16),
+            fg_color=BACKGROUND,
+            height=250,
+            corner_radius=10,
+            text_color=TEXT
+        )
+        self.text_resultado.pack(padx=20, pady=20, fill="both", expand=True)
 
-title_label = tk.Label(
-    header_frame,
-    text="Generador de Números Pseudoaleatorios",
-    font=("Segoe UI", 24, "bold"),
-    bg="#f0f2f5",
-    fg="#2b2d42"
-)
-title_label.grid(row=0, column=0)
+        # Botón para ir a pruebas de aleatoriedad
+        self.btn_ir_pruebas = ctk.CTkButton(
+            frame,
+            text="Ir a Pruebas de Aleatoriedad",
+            font=("Segoe UI Semibold", 22),
+            fg_color=ACCENT,
+            hover_color="#e6bf00",
+            height=50,
+            corner_radius=15,
+            command=self.abrir_pruebas
+        )
+        self.btn_ir_pruebas.pack(pady=30, padx=100, fill="x")
 
-subtitle_label = tk.Label(
-    header_frame,
-    text="Seleccione un método y complete los parámetros requeridos",
-    font=("Segoe UI", 12),
-    bg="#f0f2f5",
-    fg="#6c757d"
-)
-subtitle_label.grid(row=1, column=0, pady=(5, 0))
+        self.numeros_generados = []
+        self.actualizar_campos()
 
-# Variable del método seleccionado
-metodo_var = tk.StringVar(value="Cuadrados Medios")
-metodo_var.trace("w", actualizar_campos)
+    def actualizar_campos(self, event=None):
+        metodo = self.metodo_var.get()
+        if metodo == "Cuadrados Medios":
+            self.label_semilla.configure(text="Semilla:")
+            self.label_extra.grid_remove()
+            self.entry_extra.grid_remove()
+        elif metodo == "Productos Medios":
+            self.label_semilla.configure(text="Semilla 1:")
+            self.label_extra.configure(text="Semilla 2:")
+            self.label_extra.grid(row=1, column=0, padx=20, pady=12, sticky="e")
+            self.entry_extra.grid(row=1, column=1, padx=20, pady=12, sticky="w")
+        elif metodo == "Multiplicador Constante":
+            self.label_semilla.configure(text="Semilla:")
+            self.label_extra.configure(text="Constante:")
+            self.label_extra.grid(row=1, column=0, padx=20, pady=12, sticky="e")
+            self.entry_extra.grid(row=1, column=1, padx=20, pady=12, sticky="w")
 
-# Frame para el método
-method_frame = ttk.LabelFrame(main_frame, text="Configuración del Método", padding="15 10", style="TFrame")
-method_frame.grid(row=1, column=0, sticky="ew", pady=(0, 15))
-method_frame.grid_columnconfigure(1, weight=1)
+    def abrir_pruebas(self):
+        if self.numeros_generados:
+            datos_str = ",".join(map(str, self.numeros_generados))
+            subprocess.Popen([sys.executable, "pruebas_ri.py", datos_str])
+        else:
+            messagebox.showinfo("Sin datos", "Primero genera los números para realizar pruebas.")
 
-# Selector de método
-ttk.Label(method_frame, text="Método de generación:", font=("Segoe UI", 11)).grid(row=0, column=0, sticky="w", pady=8)
-metodos = ["Cuadrados Medios", "Productos Medios", "Multiplicador Constante"]
-combo = ttk.Combobox(
-    method_frame, 
-    textvariable=metodo_var, 
-    values=metodos, 
-    state="readonly",
-    font=("Segoe UI", 11)
-)
-combo.grid(row=0, column=1, padx=(20, 0), sticky="ew", pady=8)
+    def ejecutar(self):
+        metodo = self.metodo_var.get()
+        cantidad_valida, cantidad_resultado = validar_entrada(self.entry_cantidad.get(), campo="cantidad")
+        if not cantidad_valida:
+            messagebox.showerror("Error", f"Error en cantidad: {cantidad_resultado}")
+            return
+        cantidad = cantidad_resultado
+        if cantidad > 1000:
+            if not messagebox.askyesno("Advertencia", "La cantidad es muy grande. ¿Continuar?"):
+                return
+        try:
+            resultados = []
+            numeros_generados = []
+            if metodo == "Cuadrados Medios":
+                semilla_valida, semilla_resultado = validar_entrada(self.entry_semilla.get(), campo="semilla")
+                if not semilla_valida:
+                    messagebox.showerror("Error", f"Error en semilla: {semilla_resultado}")
+                    return
+                semilla = semilla_resultado
+                resultados = cuadrados_medios(semilla, cantidad)
+                numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
+            elif metodo == "Productos Medios":
+                semilla1_valida, semilla1_resultado = validar_entrada(self.entry_semilla.get(), campo="semilla")
+                semilla2_valida, semilla2_resultado = validar_entrada(self.entry_extra.get(), campo="semilla")
+                if not semilla1_valida or not semilla2_valida:
+                    messagebox.showerror("Error", "Error en las semillas")
+                    return
+                resultados = productos_medios(semilla1_resultado, semilla2_resultado, cantidad)
+                numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
+            elif metodo == "Multiplicador Constante":
+                semilla_valida, semilla_resultado = validar_entrada(self.entry_semilla.get(), campo="semilla")
+                constante_valida, constante_resultado = validar_entrada(self.entry_extra.get(), tipo="entero")
+                if not semilla_valida or not constante_valida:
+                    messagebox.showerror("Error", "Error en los parámetros")
+                    return
+                resultados = multiplicador_constante(semilla_resultado, constante_resultado, cantidad)
+                numeros_generados = [float(r.split("->")[-1].strip()) for r in resultados]
+            self.text_resultado.delete(1.0, tk.END)
+            for r in resultados:
+                self.text_resultado.insert(tk.END, r + "\n")
+            if numeros_generados:
+                media = sum(numeros_generados) / len(numeros_generados)
+                varianza = sum((x - media) ** 2 for x in numeros_generados) / len(numeros_generados)
+                self.text_resultado.insert(tk.END, f"\nEstadísticas:\nMedia: {media:.4f}\nVarianza: {varianza:.4f}\n")
+            self.numeros_generados = numeros_generados
+            
+            # Crear botón para realizar pruebas
+            for widget in self.btn_ir_pruebas.winfo_children():
+                widget.destroy()
+            btn_pruebas = ctk.CTkButton(
+                self.btn_ir_pruebas,
+                text="Realizar Pruebas con estos Datos",
+                font=("Segoe UI Semibold", 22),
+                fg_color=ACCENT,
+                hover_color="#e6bf00",
+                height=50,
+                corner_radius=15,
+                command=lambda: subprocess.Popen([sys.executable, "pruebas_ri.py", ",".join(map(str, numeros_generados))])
+            )
+            btn_pruebas.pack(fill="x", ipady=5)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error inesperado: {str(e)}")
 
-# Campos de entrada
-input_frame = ttk.LabelFrame(main_frame, text="Parámetros de Entrada", padding="15 10", style="TFrame")
-input_frame.grid(row=2, column=0, sticky="ew", pady=10)
-input_frame.grid_columnconfigure(1, weight=1)
-
-# Campo para la primera semilla
-label_semilla = ttk.Label(input_frame, text="Semilla:", font=("Segoe UI", 11))
-label_semilla.grid(row=0, column=0, sticky="e", pady=10, padx=(0, 20))
-entry_semilla = ttk.Entry(input_frame, font=("Segoe UI", 11))
-entry_semilla.grid(row=0, column=1, sticky="ew", pady=10)
-
-# Campo extra
-label_extra = ttk.Label(input_frame, text="Extra:", font=("Segoe UI", 11))
-entry_extra = ttk.Entry(input_frame, font=("Segoe UI", 11))
-
-# Campo para la cantidad
-label_cantidad = ttk.Label(input_frame, text="Cantidad:", font=("Segoe UI", 11))
-entry_cantidad = ttk.Entry(input_frame, font=("Segoe UI", 11))
-label_cantidad.grid(row=4, column=0, sticky="e", pady=4)
-entry_cantidad.grid(row=4, column=1, sticky="ew", pady=4)
-
-# Botón para ejecutar
-btn_frame = ttk.Frame(main_frame, style="TFrame")
-btn_frame.grid(row=3, column=0, sticky="ew", pady=(15, 0))
-btn_frame.grid_columnconfigure(0, weight=1)
-
-btn = ttk.Button(
-    btn_frame, 
-    text="Generar Números", 
-    command=ejecutar,
-    style="TButton"
-)
-btn.grid(row=0, column=0, sticky="ew", ipady=10)
-
-# Área de resultados
-result_frame = ttk.LabelFrame(main_frame, text="Resultados", padding="15 10", style="TFrame")
-result_frame.grid(row=4, column=0, sticky="nsew", pady=(15, 0))
-result_frame.grid_rowconfigure(1, weight=1)  # La fila del textbox se expandir
-result_frame.grid_columnconfigure(0, weight=1)
-
-# Frame para el botón de pruebas
-btn_pruebas_frame = ttk.Frame(result_frame, style="TFrame")
-btn_pruebas_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
-btn_pruebas_frame.grid_columnconfigure(0, weight=1)
-
-# Textbox de resultados
-text_resultado = tk.Text(
-    result_frame, 
-    font=("Consolas", 11),
-    bg="white",
-    bd=2,
-    relief="solid",
-    padx=20,
-    pady=20,
-    wrap="word",
-    height=20  # Altura mínima
-)
-text_resultado.grid(row=1, column=0, sticky="nsew")
-
-# Scrollbar para el textbox
-text_scrollbar = ttk.Scrollbar(result_frame, orient="vertical", command=text_resultado.yview)
-text_scrollbar.grid(row=1, column=1, sticky="ns")
-text_resultado.configure(yscrollcommand=text_scrollbar.set)
-
-# Centrar la ventana
-root.eval('tk::PlaceWindow . center')
-
-# Iniciar la aplicacion
-root.mainloop()
+if __name__ == "__main__":
+    app = GeneradorApp()
+    app.mainloop()
